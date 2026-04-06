@@ -2,16 +2,18 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { auth } from '$lib/stores/auth.js';
-	import { theme } from '$lib/stores/theme.js';
+	import { auth } from '$lib/stores/auth.svelte.js';
+	import { theme } from '$lib/stores/theme.svelte.js';
 
 	let { children } = $props();
-	let authState = $state({ user: null, loading: true, authenticated: false });
 	let sidebarOpen = $state(false);
-	let currentTheme = $state('light');
 
-	auth.subscribe(v => authState = v);
-	theme.subscribe(v => currentTheme = v);
+	function closeSidebar() {
+		sidebarOpen = false;
+	}
+	function openSidebar() {
+		sidebarOpen = true;
+	}
 
 	onMount(async () => {
 		theme.init();
@@ -19,7 +21,7 @@
 	});
 
 	$effect(() => {
-		if (!authState.loading && !authState.authenticated && !$page.url.pathname.includes('/login')) {
+		if (!auth.loading && !auth.authenticated && !$page.url.pathname.includes('/login')) {
 			goto('/admin/login');
 		}
 	});
@@ -43,20 +45,20 @@
 
 {#if $page.url.pathname.includes('/login')}
 	{@render children()}
-{:else if authState.loading}
+{:else if auth.loading}
 	<div class="loading-page"><div class="spinner"></div></div>
-{:else if authState.authenticated}
+{:else if auth.authenticated}
 	<div class="admin-layout">
 		<aside class="sidebar" class:open={sidebarOpen}>
 			<div class="sidebar-header">
 				<a href="/admin/dashboard" class="sidebar-logo">&#x2699; CMS</a>
-				<button class="btn-icon sidebar-close" onclick={() => sidebarOpen = false}>✕</button>
+				<button type="button" class="btn-icon sidebar-close" onclick={closeSidebar}>✕</button>
 			</div>
 			<nav class="sidebar-nav">
 				{#each navItems as item}
 					<a href={item.href} class="sidebar-link"
 					   class:active={$page.url.pathname.startsWith(item.href)}
-					   onclick={() => sidebarOpen = false}>
+					   onclick={closeSidebar}>
 						<span class="sidebar-icon">{item.icon}</span>
 						{item.label}
 					</a>
@@ -70,18 +72,18 @@
 		</aside>
 
 		{#if sidebarOpen}
-			<div class="sidebar-overlay" onclick={() => sidebarOpen = false} role="presentation"></div>
+			<div class="sidebar-overlay" onclick={closeSidebar} role="presentation"></div>
 		{/if}
 
 		<div class="admin-main">
 			<header class="admin-topbar">
-				<button class="btn-icon mobile-menu" onclick={() => sidebarOpen = true}>☰</button>
+				<button type="button" class="btn-icon mobile-menu" onclick={openSidebar}>☰</button>
 				<div class="topbar-spacer"></div>
 				<div class="topbar-actions">
 					<button class="btn btn-ghost btn-sm" onclick={() => theme.toggle()}>
-						{currentTheme === 'dark' ? '☀' : '☾'}
+						{theme.current === 'dark' ? '☀' : '☾'}
 					</button>
-					<span class="topbar-user">{authState.user?.display_name || authState.user?.username}</span>
+					<span class="topbar-user">{auth.user?.display_name || auth.user?.username}</span>
 					<button class="btn btn-ghost btn-sm" onclick={handleLogout}>Çıkış</button>
 				</div>
 			</header>
