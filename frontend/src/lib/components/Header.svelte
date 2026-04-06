@@ -1,29 +1,28 @@
 <script>
-	import { theme } from '$lib/stores/theme.js';
-	import { onMount } from 'svelte';
+	import { theme } from "$lib/stores/theme.svelte.js";
+	import { onMount } from "svelte";
 
 	let menus = $state([]);
-	let settings = $state({ site_name: 'CMS' });
+	let settings = $state({ site_name: "CMS" });
 	let searchOpen = $state(false);
-	let searchQuery = $state('');
+	let searchQuery = $state("");
 	let mobileMenuOpen = $state(false);
-	let currentTheme = $state('light');
-
-	theme.subscribe(v => currentTheme = v);
 
 	onMount(async () => {
 		try {
 			const [menuRes, settingsRes] = await Promise.all([
-				fetch('/api/admin/menus').catch(() => null),
-				fetch('/api/site-settings')
+				fetch("/api/admin/menus").catch(() => null),
+				fetch("/api/site-settings"),
 			]);
 			if (settingsRes?.ok) settings = await settingsRes.json();
 			// Menus might need auth, fallback to empty
 			if (menuRes?.ok) {
 				const data = await menuRes.json();
-				menus = data.filter(m => m.is_visible);
+				menus = data.filter((m) => m.is_visible);
 			}
-		} catch { /* fallback defaults */ }
+		} catch {
+			/* fallback defaults */
+		}
 	});
 
 	function handleSearch(e) {
@@ -39,7 +38,11 @@
 	<div class="container header-inner">
 		<a href="/" class="logo">
 			{#if settings.logo_url}
-				<img src={settings.logo_url} alt={settings.site_name} class="logo-img" />
+				<img
+					src={settings.logo_url}
+					alt={settings.site_name}
+					class="logo-img"
+				/>
 			{:else}
 				<span class="logo-text">{settings.site_name}</span>
 			{/if}
@@ -47,21 +50,37 @@
 
 		<nav class="nav-desktop">
 			{#each menus as menu}
-				<a href={menu.url} class="nav-link" target={menu.open_in_new_tab ? '_blank' : undefined}>
+				<a
+					href={menu.url}
+					class="nav-link"
+					target={menu.open_in_new_tab ? "_blank" : undefined}
+				>
 					{menu.label}
 				</a>
 			{/each}
 		</nav>
 
 		<div class="header-actions">
-			<button class="btn-icon" onclick={() => searchOpen = !searchOpen} aria-label="Ara">
-				&#x2315;
+			<button
+				class="btn-icon"
+				onclick={() => (searchOpen = !searchOpen)}
+				aria-label="Ara"
+			>
+				⌕
 			</button>
-			<button class="btn-icon" onclick={() => theme.toggle()} aria-label="Tema değiştir">
-				{currentTheme === 'dark' ? '&#x2600;' : '&#x263D;'}
+			<button
+				class="btn-icon"
+				onclick={() => theme.toggle()}
+				aria-label="Tema değiştir"
+			>
+				{theme.current === "dark" ? "☀" : "☽"}
 			</button>
-			<button class="btn-icon mobile-menu-btn" onclick={() => mobileMenuOpen = !mobileMenuOpen} aria-label="Menü">
-				{mobileMenuOpen ? '✕' : '☰'}
+			<button
+				class="btn-icon mobile-menu-btn"
+				onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
+				aria-label="Menü"
+			>
+				{mobileMenuOpen ? "✕" : "☰"}
 			</button>
 		</div>
 	</div>
@@ -85,8 +104,12 @@
 	{#if mobileMenuOpen}
 		<nav class="nav-mobile">
 			{#each menus as menu}
-				<a href={menu.url} class="nav-link" onclick={() => mobileMenuOpen = false}
-				   target={menu.open_in_new_tab ? '_blank' : undefined}>
+				<a
+					href={menu.url}
+					class="nav-link"
+					onclick={() => (mobileMenuOpen = false)}
+					target={menu.open_in_new_tab ? "_blank" : undefined}
+				>
 					{menu.label}
 				</a>
 			{/each}
@@ -118,8 +141,12 @@
 		color: var(--color-text);
 		flex-shrink: 0;
 	}
-	.logo:hover { color: var(--color-primary); }
-	.logo-img { height: 36px; }
+	.logo:hover {
+		color: var(--color-primary);
+	}
+	.logo-img {
+		height: 36px;
+	}
 	.nav-desktop {
 		display: flex;
 		gap: 4px;
@@ -159,7 +186,9 @@
 		background: var(--color-surface-hover);
 		color: var(--color-text);
 	}
-	.mobile-menu-btn { display: none; }
+	.mobile-menu-btn {
+		display: none;
+	}
 	.search-bar {
 		border-top: 1px solid var(--color-border);
 		padding: 12px 0;
@@ -169,12 +198,20 @@
 		display: flex;
 		gap: 8px;
 	}
-	.search-input { flex: 1; }
-	.nav-mobile { display: none; }
+	.search-input {
+		flex: 1;
+	}
+	.nav-mobile {
+		display: none;
+	}
 
 	@media (max-width: 768px) {
-		.nav-desktop { display: none; }
-		.mobile-menu-btn { display: flex; }
+		.nav-desktop {
+			display: none;
+		}
+		.mobile-menu-btn {
+			display: flex;
+		}
 		.nav-mobile {
 			display: flex;
 			flex-direction: column;

@@ -1,8 +1,8 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import { auth } from '$lib/stores/auth.js';
-	import { theme } from '$lib/stores/theme.js';
+	import { auth } from '$lib/stores/auth.svelte.js';
+	import { theme } from '$lib/stores/theme.svelte.js';
 	import { onMount } from 'svelte';
 
 	let username = $state('');
@@ -12,9 +12,6 @@
 	let captchaAnswer = $state('');
 	let error = $state('');
 	let loading = $state(false);
-	let currentTheme = $state('light');
-
-	theme.subscribe(v => currentTheme = v);
 
 	async function loadCaptcha() {
 		try {
@@ -125,7 +122,7 @@
 
 		<div class="login-footer">
 			<button class="btn btn-ghost btn-sm" onclick={() => theme.toggle()}>
-				{currentTheme === 'dark' ? '☀ Açık Tema' : '☾ Koyu Tema'}
+				{theme.current === 'dark' ? '☀ Açık Tema' : '☾ Koyu Tema'}
 			</button>
 		</div>
 	</div>

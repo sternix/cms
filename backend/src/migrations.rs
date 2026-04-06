@@ -22,7 +22,7 @@ const MIGRATIONS: &[Migration] = &[
             );
             -- Default admin user (password: admin123 - CHANGE IN PRODUCTION)
             INSERT INTO users (username, password_hash, display_name, role)
-            VALUES ('admin', '$2b$12$LJ3m4ys3Lk0TSwHCbMIJfuMDc8LMEj7MqC9VlAEwS6OqGbGYOOhW6', 'Administrator', 'admin')
+            VALUES ('admin', '$2a$12$/AvWvVIqFspCtvmJukXEw.jCbCsICsmIb2vMey0ICnXww.9wGN3Mi', 'Administrator', 'admin')
             ON CONFLICT (username) DO NOTHING;
         "#,
         down: "DROP TABLE IF EXISTS users CASCADE;",
@@ -244,40 +244,55 @@ const MIGRATIONS: &[Migration] = &[
 
 pub async fn run_migrations(client: &Client) -> Result<(), tokio_postgres::Error> {
     // Create migrations tracking table
-    client.execute(
-        "CREATE TABLE IF NOT EXISTS _migrations (
+    client
+        .execute(
+            "CREATE TABLE IF NOT EXISTS _migrations (
             version INTEGER PRIMARY KEY,
             name VARCHAR(200) NOT NULL,
             applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )",
-        &[],
-    ).await?;
+            &[],
+        )
+        .await?;
 
     for migration in MIGRATIONS {
-        let exists = client.query_opt(
-            "SELECT version FROM _migrations WHERE version = $1",
-            &[&migration.version],
-        ).await?;
+        let exists = client
+            .query_opt(
+                "SELECT version FROM _migrations WHERE version = $1",
+                &[&migration.version],
+            )
+            .await?;
 
         if exists.is_none() {
-            tracing::info!("Running migration {}: {}", migration.version, migration.name);
+            tracing::info!(
+                "Running migration {}: {}",
+                migration.version,
+                migration.name
+            );
             client.batch_execute(migration.up).await?;
-            client.execute(
-                "INSERT INTO _migrations (version, name) VALUES ($1, $2)",
-                &[&migration.version, &migration.name],
-            ).await?;
+            client
+                .execute(
+                    "INSERT INTO _migrations (version, name) VALUES ($1, $2)",
+                    &[&migration.version, &migration.name],
+                )
+                .await?;
         }
     }
 
     Ok(())
 }
 
-pub async fn _rollback_migration(client: &Client, target_version: i32) -> Result<(), tokio_postgres::Error> {
+pub async fn _rollback_migration(
+    client: &Client,
+    target_version: i32,
+) -> Result<(), tokio_postgres::Error> {
     let mut versions: Vec<i32> = Vec::new();
-    let rows = client.query(
-        "SELECT version FROM _migrations WHERE version > $1 ORDER BY version DESC",
-        &[&target_version],
-    ).await?;
+    let rows = client
+        .query(
+            "SELECT version FROM _migrations WHERE version > $1 ORDER BY version DESC",
+            &[&target_version],
+        )
+        .await?;
 
     for row in &rows {
         versions.push(row.get(0));
@@ -285,12 +300,18 @@ pub async fn _rollback_migration(client: &Client, target_version: i32) -> Result
 
     for version in versions {
         if let Some(migration) = MIGRATIONS.iter().find(|m| m.version == version) {
-            tracing::info!("Rolling back migration {}: {}", migration.version, migration.name);
+            tracing::info!(
+                "Rolling back migration {}: {}",
+                migration.version,
+                migration.name
+            );
             client.batch_execute(migration.down).await?;
-            client.execute(
-                "DELETE FROM _migrations WHERE version = $1",
-                &[&migration.version],
-            ).await?;
+            client
+                .execute(
+                    "DELETE FROM _migrations WHERE version = $1",
+                    &[&migration.version],
+                )
+                .await?;
         }
     }
 
